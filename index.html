@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ermak X — Вход выполнен</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #030617;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 420px;
+            width: 100%;
+            padding: 40px 32px;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border-radius: 48px;
+            border: 2px solid rgba(123, 47, 252, 0.3);
+            box-shadow: 0 0 60px rgba(123, 47, 252, 0.15), inset 0 0 60px rgba(123, 47, 252, 0.05);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .container::before {
+            content: '';
+            position: absolute;
+            inset: -2px;
+            border-radius: 50px;
+            padding: 2px;
+            background: conic-gradient(
+                from var(--angle, 0deg),
+                transparent 0%,
+                #7b2ffc 15%,
+                #a855f7 30%,
+                #c084fc 45%,
+                #a855f7 60%,
+                #7b2ffc 75%,
+                transparent 100%
+            );
+            background-size: 300% 300%;
+            animation: borderSpin 6s linear infinite;
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        @property --angle {
+            syntax: '<angle>';
+            initial-value: 0deg;
+            inherits: false;
+        }
+
+        @keyframes borderSpin {
+            0% { --angle: 0deg; }
+            100% { --angle: 360deg; }
+        }
+
+        .logo {
+            font-size: 64px;
+            margin-bottom: 16px;
+            display: block;
+        }
+
+        .title {
+            font-size: 28px;
+            font-weight: 700;
+            background: linear-gradient(90deg, #7b2ffc, #a855f7, #c084fc);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 16px;
+            margin-bottom: 24px;
+        }
+
+        .status-icon {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            background: rgba(34, 197, 94, 0.15);
+            border: 2px solid rgba(34, 197, 94, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-size: 36px;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.05); opacity: 0.8; }
+        }
+
+        .spinner {
+            width: 48px;
+            height: 48px;
+            margin: 0 auto 20px;
+            border: 4px solid rgba(123, 47, 252, 0.15);
+            border-top-color: #7b2ffc;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .message {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 15px;
+            line-height: 1.5;
+            margin-bottom: 8px;
+        }
+
+        .message.success {
+            color: #4ade80;
+        }
+
+        .message.error {
+            color: #f87171;
+        }
+
+        .footer {
+            margin-top: 24px;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.25);
+            letter-spacing: 0.5px;
+        }
+
+        .footer span {
+            color: #7b2ffc;
+        }
+
+        .redirect-info {
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 13px;
+            margin-top: 12px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <span class="logo">✦</span>
+
+        <div class="title">Ermak X</div>
+        <div class="subtitle">Обработка входа</div>
+
+        <!-- Спиннер (по умолчанию) -->
+        <div id="spinner" class="spinner"></div>
+
+        <!-- Иконка статуса (скрыта) -->
+        <div id="statusIcon" class="status-icon" style="display:none;">✅</div>
+
+        <!-- Сообщение -->
+        <div id="message" class="message">Выполняется вход...</div>
+
+        <!-- Информация о редиректе -->
+        <div class="redirect-info" id="redirectInfo">Перенаправление через <span id="countdown">3</span> секунды...</div>
+
+        <div class="footer">© <span>ErmakArtekovec</span> 2026</div>
+    </div>
+
+    <script>
+        // ============================================================
+        //  ОБРАБОТКА ВХОДА
+        // ============================================================
+
+        const spinner = document.getElementById('spinner');
+        const statusIcon = document.getElementById('statusIcon');
+        const messageEl = document.getElementById('message');
+        const redirectInfo = document.getElementById('redirectInfo');
+        const countdownEl = document.getElementById('countdown');
+
+        // Функция для отображения статуса
+        function setStatus(type, msg) {
+            spinner.style.display = 'none';
+            statusIcon.style.display = 'flex';
+
+            if (type === 'success') {
+                statusIcon.textContent = '✅';
+                statusIcon.style.borderColor = 'rgba(34, 197, 94, 0.3)';
+                statusIcon.style.background = 'rgba(34, 197, 94, 0.15)';
+                messageEl.className = 'message success';
+                messageEl.textContent = msg;
+            } else if (type === 'error') {
+                statusIcon.textContent = '❌';
+                statusIcon.style.borderColor = 'rgba(239, 68, 68, 0.3)';
+                statusIcon.style.background = 'rgba(239, 68, 68, 0.15)';
+                messageEl.className = 'message error';
+                messageEl.textContent = msg;
+            } else {
+                statusIcon.textContent = '⏳';
+                statusIcon.style.borderColor = 'rgba(123, 47, 252, 0.3)';
+                statusIcon.style.background = 'rgba(123, 47, 252, 0.15)';
+                messageEl.className = 'message';
+                messageEl.textContent = msg;
+            }
+        }
+
+        // Функция для обратного отсчёта
+        function startCountdown(seconds, callback) {
+            let remaining = seconds;
+            countdownEl.textContent = remaining;
+
+            const interval = setInterval(() => {
+                remaining--;
+                countdownEl.textContent = remaining;
+                if (remaining <= 0) {
+                    clearInterval(interval);
+                    callback();
+                }
+            }, 1000);
+        }
+
+        // ============================================================
+        //  ОСНОВНАЯ ЛОГИКА
+        // ============================================================
+
+        (function() {
+            const hash = window.location.hash;
+
+            if (hash) {
+                const params = new URLSearchParams(hash.substring(1));
+                const token = params.get('access_token');
+                const error = params.get('error');
+
+                if (error) {
+                    setStatus('error', `❌ Ошибка авторизации: ${error}`);
+                    redirectInfo.textContent = 'Закройте это окно и попробуйте снова.';
+                    return;
+                }
+
+                if (token) {
+                    // Успешный вход
+                    setStatus('success', '✅ Вход выполнен успешно!');
+
+                    // Сохраняем токен
+                    localStorage.setItem('google_token', token);
+                    localStorage.setItem('google_token_time', Date.now().toString());
+
+                    // Перенаправляем в основное приложение
+                    startCountdown(3, function() {
+                        window.location.href = 'https://ermakartekovec-star.github.io/';
+                    });
+
+                    // Запасной вариант — если что-то пойдёт не так
+                    setTimeout(() => {
+                        window.location.href = 'https://ermakartekovec-star.github.io/';
+                    }, 5000);
+                } else {
+                    setStatus('error', '❌ Токен не найден в URL');
+                    redirectInfo.textContent = 'Закройте это окно и попробуйте снова.';
+                }
+            } else {
+                setStatus('error', '❌ Нет параметров авторизации');
+                redirectInfo.textContent = 'Закройте это окно и попробуйте снова.';
+            }
+        })();
+    </script>
+</body>
+</html>
